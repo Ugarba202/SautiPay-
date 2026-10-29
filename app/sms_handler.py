@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional
 from app.models import db_session
 from app.ledger import Ledger
 from app.rate_oracle import rate_oracle
-from app.security_engine import security_engine
+from app.security_engine import SecurityEngine
 
 class SMSHandler:
     """
@@ -14,6 +14,7 @@ class SMSHandler:
     """
     def __init__(self, db_path: Optional[str] = None):
         self.db_path = db_path
+        self.security_engine = SecurityEngine(db_path)
 
     def handle_inbound_sms(self, phone: str, message: str) -> str:
         text = message.strip().lower()
@@ -51,7 +52,7 @@ class SMSHandler:
             amount = int(send_match.group(1))
             dest = send_match.group(2)
             # Create a pending intent
-            intent = security_engine.create_intent(merchant_id, amount, action="sms_send_p2p")
+            intent = self.security_engine.create_intent(merchant_id, amount, action="sms_send_p2p")
             return (
                 f"SAUTIPAY: Za mu kira ka don tabbatar da tura ₦{amount} zuwa {dest}. / "
                 f"We are calling you back now to confirm ₦{amount} to {dest} with your PIN."

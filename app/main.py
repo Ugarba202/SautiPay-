@@ -4,8 +4,11 @@ from app.config import settings
 from app.models import init_db
 from app.dashboard import dashboard_router
 from app.ussd_handler import ussd_handler
+from app.sms_handler import sms_handler
+from app.voice_handler import voice_handler
 from app.settlement import settle, SettlementError
 from pydantic import BaseModel
+from typing import Optional
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,6 +34,25 @@ async def ussd_endpoint(
 ):
     response_text = ussd_handler.handle(sessionId, phoneNumber, text)
     return Response(content=response_text, media_type="text/plain")
+
+# Africa's Talking / Twilio Inbound SMS Webhook endpoint
+@app.post("/sms")
+async def sms_endpoint(
+    from_: str = Form(alias="from", default=""),
+    text: str = Form(default=""),
+    to: str = Form(default="")
+):
+    reply_text = sms_handler.handle_inbound_sms(from_, text)
+    return Response(content=reply_text, media_type="text/plain")
+
+# Africa's Talking / Twilio Voice IVR Webhook endpoint
+@app.post("/voice")
+async def voice_endpoint(
+    callerNumber: str = Form(default=""),
+    dtmfDigits: Optional[str] = Form(default=None)
+):
+    xml_response = voice_handler.handle_inbound_call(callerNumber, dtmfDigits)
+    return Response(content=xml_response, media_type="application/xml")
 
 class SettleWebhookRequest(BaseModel):
     invoice_id: str

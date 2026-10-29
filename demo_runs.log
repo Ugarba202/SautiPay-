@@ -1,0 +1,530 @@
+=== DEMO RUN #1 at Thu Oct 29 01:38:23 PM UTC 2026 ===
+============================================================
+   SAUTIPAY — 3-MINUTE HACKATHON STAGE DEMO RUNNER
+   'Verify the payment, not the screenshot.'
+============================================================
+✓ Seeded demo merchant: Phone=+2348012345678, PIN=1234
+
+=======================================================
+🎬 BEAT 1: THE PROBLEM — FAKE ALERTS IN NIGERIAN MARKETS
+=======================================================
+A fabric seller in Kaduna Central Market has a basic phone. Scammers show fake screenshots
+or forged bank alert SMS. Today's Lightning solutions offer wallets (Machankura), but
+merchant settlement is 'not yet available'. SautiPay builds the merchant trust layer.
+
+
+=======================================================
+🎬 BEAT 2: MERCHANT REQUESTS ₦2,000 VIA USSD (*384#)
+=======================================================
+Merchant dials *384# on feature phone, enters ₦2000, enters PIN 1234.
+
+[PHONE SCREEN]:
+CON SautiPay
+1. Nemi Biya (Request Payment)
+2. Balance
+3. Zaɓi Moda (Choose Mode)
+0. Fita (Exit)
+
+[PHONE SCREEN]:
+CON Shiga adadin Naira (e.g. 2000):
+
+[PHONE SCREEN]:
+CON Shiga PIN ɗinka:
+
+[PHONE SCREEN]:
+END SAUTIPAY: Invoice ₦2000 ready. Ref 050a80. Customer yana biya…
+
+✓ Invoice Stamped & Created in Database: d445a99f-4f10-43aa-887b-736608db4ee0
+  Amount: ₦2000 (3694 sats at 1.847 sats/NGN)
+  Payment Hash: 050a8072804376004f20b70ce81d247e7e53b1c322f12f49e30da09f37d40db8
+
+=======================================================
+🎬 BEAT 3: LIGHTNING SETTLEMENT VERIFICATION & IMMUTABLE MINT
+=======================================================
+Customer pays from any Lightning wallet. Node confirms settlement.
+INV-1: Both SHA256(preimage) matches AND LND confirms SETTLED.
+Only then does a receipt mint into the ledger, and only then does SMS fire.
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: ₦2000 RECEIVED — SETTLED 14:38. Ref: 491421… Mode: lock_ngn.
+
+✓ SETTLEMENT CONFIRMED BY NODE! Payment ID: fd322601-5c25-428a-a7f2-676003433129
+✓ Minted Canonical Receipt Hash: 4914215ec1411b7728aa23000e3f645b0ad7310601620a74f853f021e773f5b3
+
+=======================================================
+🎬 BEAT 4: AUDIT LEDGER INTEGRITY
+=======================================================
+Auditing merchant hash chain against genesis...
+
+✓ Ledger Cryptographic Verification: VALID & UNTAMPERED
+
+=======================================================
+🎬 BEAT 5: TAMPER DEMONSTRATION — ROGUE DB EDIT DETECTED
+=======================================================
+Attempting to alter the receipt amount in SQLite without node proof.
+
+Action: Tampered Receipt #1: Amount changed from ₦2000 to ₦99999. Chain validity is now False.
+Ledger Verification After Tampering: TAMPER DETECTED (REJECTED)
+✓ Receipt restored to original state.
+
+=======================================================
+🎬 BEAT 6: SECURITY ENGINE — REPLAY ATTACK BLOCKED
+=======================================================
+An attacker captures an old authorization nonce and attempts to replay it.
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: PAYMENT BLOCKED — replay_blocked. Ref: 0af059
+
+✓ Result: Replay successfully blocked: replay_blocked (Intent already used - replay blocked)
+
+=======================================================
+🎬 BEAT 7: SECURITY ENGINE — OVER-LIMIT TRANSACTION BLOCKED
+=======================================================
+A merchant or malicious caller attempts a ₦15,000 transaction (Cap is ₦10,000).
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: PAYMENT BLOCKED — over_tx_limit. Ref: a38dc9
+
+✓ Result: Over-limit transaction successfully blocked: over_tx_limit (Amount ₦15000 exceeds per-tx limit of ₦10000)
+
+=======================================================
+🎬 BEAT 8: MERCHANT VALUE MODE — LOCK_NGN VS KEEP_SATS
+=======================================================
+Merchant dials USSD and switches mode from lock_ngn to keep_sats.
+
+[PHONE SCREEN]:
+END SAUTIPAY: An sauya mode zuwa keep_sats.
+
+
+============================================================
+🎉 DEMO COMPLETE: All 8 beats executed flawlessly!
+   Open http://localhost:8000 on laptop to view the live Control Room.
+   Open http://localhost:8000/m on mobile for the fallback phone view.
+============================================================
+
+✓ RUN #1: PASSED
+
+=== DEMO RUN #2 at Thu Oct 29 01:38:32 PM UTC 2026 ===
+============================================================
+   SAUTIPAY — 3-MINUTE HACKATHON STAGE DEMO RUNNER
+   'Verify the payment, not the screenshot.'
+============================================================
+✓ Seeded demo merchant: Phone=+2348012345678, PIN=1234
+
+=======================================================
+🎬 BEAT 1: THE PROBLEM — FAKE ALERTS IN NIGERIAN MARKETS
+=======================================================
+A fabric seller in Kaduna Central Market has a basic phone. Scammers show fake screenshots
+or forged bank alert SMS. Today's Lightning solutions offer wallets (Machankura), but
+merchant settlement is 'not yet available'. SautiPay builds the merchant trust layer.
+
+
+=======================================================
+🎬 BEAT 2: MERCHANT REQUESTS ₦2,000 VIA USSD (*384#)
+=======================================================
+Merchant dials *384# on feature phone, enters ₦2000, enters PIN 1234.
+
+[PHONE SCREEN]:
+CON SautiPay
+1. Nemi Biya (Request Payment)
+2. Balance
+3. Zaɓi Moda (Choose Mode)
+0. Fita (Exit)
+
+[PHONE SCREEN]:
+CON Shiga adadin Naira (e.g. 2000):
+
+[PHONE SCREEN]:
+CON Shiga PIN ɗinka:
+
+[PHONE SCREEN]:
+END SAUTIPAY: Invoice ₦2000 ready. Ref 8956a3. Customer yana biya…
+
+✓ Invoice Stamped & Created in Database: fa29707e-e67b-4da4-a52a-9a084c5e4adc
+  Amount: ₦2000 (3694 sats at 1.847 sats/NGN)
+  Payment Hash: 8956a398f2f8c2c37bb53fa0d226bb7e1e951af6df87ccc78378662554f4a9b1
+
+=======================================================
+🎬 BEAT 3: LIGHTNING SETTLEMENT VERIFICATION & IMMUTABLE MINT
+=======================================================
+Customer pays from any Lightning wallet. Node confirms settlement.
+INV-1: Both SHA256(preimage) matches AND LND confirms SETTLED.
+Only then does a receipt mint into the ledger, and only then does SMS fire.
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: ₦2000 RECEIVED — SETTLED 14:38. Ref: d547db… Mode: lock_ngn.
+
+✓ SETTLEMENT CONFIRMED BY NODE! Payment ID: 6920964d-0708-432a-a678-77c9644ea981
+✓ Minted Canonical Receipt Hash: d547dbb7a5220f0372d589d2fda879ccd78761337ccd4ecf07bfed2c14ba288b
+
+=======================================================
+🎬 BEAT 4: AUDIT LEDGER INTEGRITY
+=======================================================
+Auditing merchant hash chain against genesis...
+
+✓ Ledger Cryptographic Verification: VALID & UNTAMPERED
+
+=======================================================
+🎬 BEAT 5: TAMPER DEMONSTRATION — ROGUE DB EDIT DETECTED
+=======================================================
+Attempting to alter the receipt amount in SQLite without node proof.
+
+Action: Tampered Receipt #2: Amount changed from ₦2000 to ₦99999. Chain validity is now False.
+Ledger Verification After Tampering: TAMPER DETECTED (REJECTED)
+✓ Receipt restored to original state.
+
+=======================================================
+🎬 BEAT 6: SECURITY ENGINE — REPLAY ATTACK BLOCKED
+=======================================================
+An attacker captures an old authorization nonce and attempts to replay it.
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: PAYMENT BLOCKED — replay_blocked. Ref: 7e1ae8
+
+✓ Result: Replay successfully blocked: replay_blocked (Intent already used - replay blocked)
+
+=======================================================
+🎬 BEAT 7: SECURITY ENGINE — OVER-LIMIT TRANSACTION BLOCKED
+=======================================================
+A merchant or malicious caller attempts a ₦15,000 transaction (Cap is ₦10,000).
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: PAYMENT BLOCKED — over_tx_limit. Ref: cefa1b
+
+✓ Result: Over-limit transaction successfully blocked: over_tx_limit (Amount ₦15000 exceeds per-tx limit of ₦10000)
+
+=======================================================
+🎬 BEAT 8: MERCHANT VALUE MODE — LOCK_NGN VS KEEP_SATS
+=======================================================
+Merchant dials USSD and switches mode from lock_ngn to keep_sats.
+
+[PHONE SCREEN]:
+END SAUTIPAY: An sauya mode zuwa keep_sats.
+
+
+============================================================
+🎉 DEMO COMPLETE: All 8 beats executed flawlessly!
+   Open http://localhost:8000 on laptop to view the live Control Room.
+   Open http://localhost:8000/m on mobile for the fallback phone view.
+============================================================
+
+✓ RUN #2: PASSED
+
+=== DEMO RUN #3 at Thu Oct 29 01:38:41 PM UTC 2026 ===
+============================================================
+   SAUTIPAY — 3-MINUTE HACKATHON STAGE DEMO RUNNER
+   'Verify the payment, not the screenshot.'
+============================================================
+✓ Seeded demo merchant: Phone=+2348012345678, PIN=1234
+
+=======================================================
+🎬 BEAT 1: THE PROBLEM — FAKE ALERTS IN NIGERIAN MARKETS
+=======================================================
+A fabric seller in Kaduna Central Market has a basic phone. Scammers show fake screenshots
+or forged bank alert SMS. Today's Lightning solutions offer wallets (Machankura), but
+merchant settlement is 'not yet available'. SautiPay builds the merchant trust layer.
+
+
+=======================================================
+🎬 BEAT 2: MERCHANT REQUESTS ₦2,000 VIA USSD (*384#)
+=======================================================
+Merchant dials *384# on feature phone, enters ₦2000, enters PIN 1234.
+
+[PHONE SCREEN]:
+CON SautiPay
+1. Nemi Biya (Request Payment)
+2. Balance
+3. Zaɓi Moda (Choose Mode)
+0. Fita (Exit)
+
+[PHONE SCREEN]:
+CON Shiga adadin Naira (e.g. 2000):
+
+[PHONE SCREEN]:
+CON Shiga PIN ɗinka:
+
+[PHONE SCREEN]:
+END SAUTIPAY: Invoice ₦2000 ready. Ref 5c5ce1. Customer yana biya…
+
+✓ Invoice Stamped & Created in Database: 9972ea32-6344-4741-aaae-78f6058ac941
+  Amount: ₦2000 (3694 sats at 1.847 sats/NGN)
+  Payment Hash: 5c5ce1b037f30febdcf705f0cd0426f69d5982385fd63855fd39179fe60ce1c0
+
+=======================================================
+🎬 BEAT 3: LIGHTNING SETTLEMENT VERIFICATION & IMMUTABLE MINT
+=======================================================
+Customer pays from any Lightning wallet. Node confirms settlement.
+INV-1: Both SHA256(preimage) matches AND LND confirms SETTLED.
+Only then does a receipt mint into the ledger, and only then does SMS fire.
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: ₦2000 RECEIVED — SETTLED 14:38. Ref: f9d9a5… Mode: lock_ngn.
+
+✓ SETTLEMENT CONFIRMED BY NODE! Payment ID: e778b31d-45cb-44da-852f-73eea09f7d1c
+✓ Minted Canonical Receipt Hash: f9d9a5e783f1ca0ff85ccfa6388b2c2907ab864633565a40f7e304c32bd58fb3
+
+=======================================================
+🎬 BEAT 4: AUDIT LEDGER INTEGRITY
+=======================================================
+Auditing merchant hash chain against genesis...
+
+✓ Ledger Cryptographic Verification: VALID & UNTAMPERED
+
+=======================================================
+🎬 BEAT 5: TAMPER DEMONSTRATION — ROGUE DB EDIT DETECTED
+=======================================================
+Attempting to alter the receipt amount in SQLite without node proof.
+
+Action: Tampered Receipt #3: Amount changed from ₦2000 to ₦99999. Chain validity is now False.
+Ledger Verification After Tampering: TAMPER DETECTED (REJECTED)
+✓ Receipt restored to original state.
+
+=======================================================
+🎬 BEAT 6: SECURITY ENGINE — REPLAY ATTACK BLOCKED
+=======================================================
+An attacker captures an old authorization nonce and attempts to replay it.
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: PAYMENT BLOCKED — replay_blocked. Ref: 7179dc
+
+✓ Result: Replay successfully blocked: replay_blocked (Intent already used - replay blocked)
+
+=======================================================
+🎬 BEAT 7: SECURITY ENGINE — OVER-LIMIT TRANSACTION BLOCKED
+=======================================================
+A merchant or malicious caller attempts a ₦15,000 transaction (Cap is ₦10,000).
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: PAYMENT BLOCKED — over_tx_limit. Ref: 47f49a
+
+✓ Result: Over-limit transaction successfully blocked: over_tx_limit (Amount ₦15000 exceeds per-tx limit of ₦10000)
+
+=======================================================
+🎬 BEAT 8: MERCHANT VALUE MODE — LOCK_NGN VS KEEP_SATS
+=======================================================
+Merchant dials USSD and switches mode from lock_ngn to keep_sats.
+
+[PHONE SCREEN]:
+END SAUTIPAY: An sauya mode zuwa keep_sats.
+
+
+============================================================
+🎉 DEMO COMPLETE: All 8 beats executed flawlessly!
+   Open http://localhost:8000 on laptop to view the live Control Room.
+   Open http://localhost:8000/m on mobile for the fallback phone view.
+============================================================
+
+✓ RUN #3: PASSED
+
+=== DEMO RUN #4 at Thu Oct 29 01:38:51 PM UTC 2026 ===
+============================================================
+   SAUTIPAY — 3-MINUTE HACKATHON STAGE DEMO RUNNER
+   'Verify the payment, not the screenshot.'
+============================================================
+✓ Seeded demo merchant: Phone=+2348012345678, PIN=1234
+
+=======================================================
+🎬 BEAT 1: THE PROBLEM — FAKE ALERTS IN NIGERIAN MARKETS
+=======================================================
+A fabric seller in Kaduna Central Market has a basic phone. Scammers show fake screenshots
+or forged bank alert SMS. Today's Lightning solutions offer wallets (Machankura), but
+merchant settlement is 'not yet available'. SautiPay builds the merchant trust layer.
+
+
+=======================================================
+🎬 BEAT 2: MERCHANT REQUESTS ₦2,000 VIA USSD (*384#)
+=======================================================
+Merchant dials *384# on feature phone, enters ₦2000, enters PIN 1234.
+
+[PHONE SCREEN]:
+CON SautiPay
+1. Nemi Biya (Request Payment)
+2. Balance
+3. Zaɓi Moda (Choose Mode)
+0. Fita (Exit)
+
+[PHONE SCREEN]:
+CON Shiga adadin Naira (e.g. 2000):
+
+[PHONE SCREEN]:
+CON Shiga PIN ɗinka:
+
+[PHONE SCREEN]:
+END SAUTIPAY: Invoice ₦2000 ready. Ref 01d697. Customer yana biya…
+
+✓ Invoice Stamped & Created in Database: 033f7aaa-2467-44a5-a897-266a9919df14
+  Amount: ₦2000 (3694 sats at 1.847 sats/NGN)
+  Payment Hash: 01d6972362a74f6a1d968db437732f9402a436d88a00f47688cd7bfe880e34f5
+
+=======================================================
+🎬 BEAT 3: LIGHTNING SETTLEMENT VERIFICATION & IMMUTABLE MINT
+=======================================================
+Customer pays from any Lightning wallet. Node confirms settlement.
+INV-1: Both SHA256(preimage) matches AND LND confirms SETTLED.
+Only then does a receipt mint into the ledger, and only then does SMS fire.
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: ₦2000 RECEIVED — SETTLED 14:38. Ref: 5eb849… Mode: lock_ngn.
+
+✓ SETTLEMENT CONFIRMED BY NODE! Payment ID: eee57e20-be6f-476c-85e0-3cedf08fc03c
+✓ Minted Canonical Receipt Hash: 5eb849a8a292dfc2605353f26d5a134ae58c6054422a85f70c16c9125e76fe9c
+
+=======================================================
+🎬 BEAT 4: AUDIT LEDGER INTEGRITY
+=======================================================
+Auditing merchant hash chain against genesis...
+
+✓ Ledger Cryptographic Verification: VALID & UNTAMPERED
+
+=======================================================
+🎬 BEAT 5: TAMPER DEMONSTRATION — ROGUE DB EDIT DETECTED
+=======================================================
+Attempting to alter the receipt amount in SQLite without node proof.
+
+Action: Tampered Receipt #4: Amount changed from ₦2000 to ₦99999. Chain validity is now False.
+Ledger Verification After Tampering: TAMPER DETECTED (REJECTED)
+✓ Receipt restored to original state.
+
+=======================================================
+🎬 BEAT 6: SECURITY ENGINE — REPLAY ATTACK BLOCKED
+=======================================================
+An attacker captures an old authorization nonce and attempts to replay it.
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: PAYMENT BLOCKED — replay_blocked. Ref: cc45c5
+
+✓ Result: Replay successfully blocked: replay_blocked (Intent already used - replay blocked)
+
+=======================================================
+🎬 BEAT 7: SECURITY ENGINE — OVER-LIMIT TRANSACTION BLOCKED
+=======================================================
+A merchant or malicious caller attempts a ₦15,000 transaction (Cap is ₦10,000).
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: PAYMENT BLOCKED — over_tx_limit. Ref: 2dd2a8
+
+✓ Result: Over-limit transaction successfully blocked: over_tx_limit (Amount ₦15000 exceeds per-tx limit of ₦10000)
+
+=======================================================
+🎬 BEAT 8: MERCHANT VALUE MODE — LOCK_NGN VS KEEP_SATS
+=======================================================
+Merchant dials USSD and switches mode from lock_ngn to keep_sats.
+
+[PHONE SCREEN]:
+END SAUTIPAY: An sauya mode zuwa keep_sats.
+
+
+============================================================
+🎉 DEMO COMPLETE: All 8 beats executed flawlessly!
+   Open http://localhost:8000 on laptop to view the live Control Room.
+   Open http://localhost:8000/m on mobile for the fallback phone view.
+============================================================
+
+✓ RUN #4: PASSED
+
+=== DEMO RUN #5 at Thu Oct 29 01:39:00 PM UTC 2026 ===
+============================================================
+   SAUTIPAY — 3-MINUTE HACKATHON STAGE DEMO RUNNER
+   'Verify the payment, not the screenshot.'
+============================================================
+✓ Seeded demo merchant: Phone=+2348012345678, PIN=1234
+
+=======================================================
+🎬 BEAT 1: THE PROBLEM — FAKE ALERTS IN NIGERIAN MARKETS
+=======================================================
+A fabric seller in Kaduna Central Market has a basic phone. Scammers show fake screenshots
+or forged bank alert SMS. Today's Lightning solutions offer wallets (Machankura), but
+merchant settlement is 'not yet available'. SautiPay builds the merchant trust layer.
+
+
+=======================================================
+🎬 BEAT 2: MERCHANT REQUESTS ₦2,000 VIA USSD (*384#)
+=======================================================
+Merchant dials *384# on feature phone, enters ₦2000, enters PIN 1234.
+
+[PHONE SCREEN]:
+CON SautiPay
+1. Nemi Biya (Request Payment)
+2. Balance
+3. Zaɓi Moda (Choose Mode)
+0. Fita (Exit)
+
+[PHONE SCREEN]:
+CON Shiga adadin Naira (e.g. 2000):
+
+[PHONE SCREEN]:
+CON Shiga PIN ɗinka:
+
+[PHONE SCREEN]:
+END SAUTIPAY: Invoice ₦2000 ready. Ref b9899c. Customer yana biya…
+
+✓ Invoice Stamped & Created in Database: 78904ad0-e39d-4013-849b-af4f05de4f67
+  Amount: ₦2000 (3694 sats at 1.847 sats/NGN)
+  Payment Hash: b9899c8c2bf61cdb9366916756f65c339b8ce111ca9559dc181f80cd38651672
+
+=======================================================
+🎬 BEAT 3: LIGHTNING SETTLEMENT VERIFICATION & IMMUTABLE MINT
+=======================================================
+Customer pays from any Lightning wallet. Node confirms settlement.
+INV-1: Both SHA256(preimage) matches AND LND confirms SETTLED.
+Only then does a receipt mint into the ledger, and only then does SMS fire.
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: ₦2000 RECEIVED — SETTLED 14:39. Ref: 81f50b… Mode: lock_ngn.
+
+✓ SETTLEMENT CONFIRMED BY NODE! Payment ID: 15f1bb85-1160-4a94-ae82-ba534966d557
+✓ Minted Canonical Receipt Hash: 81f50bda6f8c35f8e0054e5f3fb7ce1e77264aac2833f005dca3f21014f66c47
+
+=======================================================
+🎬 BEAT 4: AUDIT LEDGER INTEGRITY
+=======================================================
+Auditing merchant hash chain against genesis...
+
+✓ Ledger Cryptographic Verification: VALID & UNTAMPERED
+
+=======================================================
+🎬 BEAT 5: TAMPER DEMONSTRATION — ROGUE DB EDIT DETECTED
+=======================================================
+Attempting to alter the receipt amount in SQLite without node proof.
+
+Action: Tampered Receipt #5: Amount changed from ₦2000 to ₦99999. Chain validity is now False.
+Ledger Verification After Tampering: TAMPER DETECTED (REJECTED)
+✓ Receipt restored to original state.
+
+=======================================================
+🎬 BEAT 6: SECURITY ENGINE — REPLAY ATTACK BLOCKED
+=======================================================
+An attacker captures an old authorization nonce and attempts to replay it.
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: PAYMENT BLOCKED — replay_blocked. Ref: ce0b23
+
+✓ Result: Replay successfully blocked: replay_blocked (Intent already used - replay blocked)
+
+=======================================================
+🎬 BEAT 7: SECURITY ENGINE — OVER-LIMIT TRANSACTION BLOCKED
+=======================================================
+A merchant or malicious caller attempts a ₦15,000 transaction (Cap is ₦10,000).
+
+
+[SMS DISPATCH -> +2348012345678]: SAUTIPAY: PAYMENT BLOCKED — over_tx_limit. Ref: 95c381
+
+✓ Result: Over-limit transaction successfully blocked: over_tx_limit (Amount ₦15000 exceeds per-tx limit of ₦10000)
+
+=======================================================
+🎬 BEAT 8: MERCHANT VALUE MODE — LOCK_NGN VS KEEP_SATS
+=======================================================
+Merchant dials USSD and switches mode from lock_ngn to keep_sats.
+
+[PHONE SCREEN]:
+END SAUTIPAY: An sauya mode zuwa keep_sats.
+
+
+============================================================
+🎉 DEMO COMPLETE: All 8 beats executed flawlessly!
+   Open http://localhost:8000 on laptop to view the live Control Room.
+   Open http://localhost:8000/m on mobile for the fallback phone view.
+============================================================
+
+✓ RUN #5: PASSED
+

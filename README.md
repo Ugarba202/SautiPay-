@@ -1,193 +1,353 @@
 # SautiPay
 
-A Bitcoin Lightning wallet you operate from any phone call, SMS, or USSD dial. No app, no internet, no smartphone. Your phone number is your account; a keypad, text commands, and a voice menu are the interface.
+> **Bitcoin access through familiar phone interfaces — USSD first, voice calling as an advanced channel.**
 
-Built for **DevFest Kaduna Build-a-thon (Btrust Track)**, October 2026.
+SautiPay is a phone-based Bitcoin access project designed for people who may not have a smartphone, reliable mobile data, or experience with conventional wallet interfaces. The product direction prioritizes USSD, Lightning payments, and English/Hausa accessibility.
 
----
-
-## The idea
-
-Hundreds of millions of people in Africa have a phone that does calls and SMS and nothing else. They are shut out of every Bitcoin wallet, because every wallet assumes a smartphone, an app store, and a reliable data connection.
-
-At the same time, informal market merchants in Nigeria lose millions to **fake bank alert SMS and doctored transfer screenshots**.
-
-**SautiPay puts a real Lightning wallet behind a phone number with cryptographic settlement verification:**
-
-* **Call, dial, or text from any handset.** Your phone number is your account.
-* **A 4-digit PIN**, hashed with `scrypt` and enforced by a decline-by-default security engine.
-* **Receive to a human-readable Lightning address** tied to your number (`<phone>@sautipay.ng`).
-* **Send by SMS in plain language or Hausa;** the backend calls you back to confirm with your PIN, so the PIN never travels in a message.
-* **Dial USSD `*384#`** for instant interactive menus in English or Hausa.
-* **Merchant Settlement Verification:** The notification service has **zero code path** that sends "PAYMENT RECEIVED" except an authoritative settlement event from our Lightning node (`SHA256(preimage) == invoice.payment_hash` and node confirmation).
-* **Hash-Chained Receipt Ledger:** Every settlement mints an immutable, tamper-evident block into an append-only receipt chain verified from Genesis. If anyone tampers with a database row, the audit chain immediately flags it as compromised.
-* **Multi-Rail Bitcoin Mobility:** Atomic swaps between Lightning BTC and on-chain cold storage.
-* **Dual Value Modes:** Merchants choose between stacking Bitcoin (`keep_sats`) or locking fiat value at the stamped rate (`lock_ngn`).
+> **Status note:** This README describes the intended product and architecture. Mark a feature as implemented only after its code exists and it has been tested. Voice calling is described as a planned advanced feature unless the repository already contains a working, tested IVR integration.
 
 ---
 
-## Status
+## The Problem
 
-Working end to end: USSD session engine (`*384#`), watch-only balance and receipts by SMS, sends with PIN confirmation, LND testnet settlement, tamper-evident receipt chaining, and multi-rail atomic swaps. The pieces:
+Many financial and Bitcoin services assume users have a smartphone, can install an app, have reliable mobile internet, and understand unfamiliar interfaces. These assumptions can exclude feature-phone users, people with limited connectivity, and first-time Bitcoin users.
 
-1. **PIN-based security & limits:**
-   * 4-digit PIN → `hashlib.scrypt` with a cryptographically secure random salt.
-   * Brute-force protection: 3 wrong PIN attempts locks the account.
-   * Spending limits: a per-send maximum (₦10,000 default) and a rolling 24-hour cap per user (₦50,000 default), checked before an intent is created and again at execution.
-2. **The Lightning settlement engine:**
-   * Connected to LND REST API.
-   * **INV-1:** `settle()` succeeds iff `SHA256(preimage).hex() == invoice.payment_hash` **and** the node reports the invoice `SETTLED`.
-   * **INV-2 Idempotency:** Duplicate settle calls or duplicate webhooks return the existing payment; no duplicate ledger entries or duplicate SMS alerts are ever generated.
-3. **The Voice & Call-Back layer:**
-   * Every prompt localized in **English and Hausa**.
-   * State-changing SMS sends trigger a call-back where you hear the amount and recipient, enter your PIN on the keypad (DTMF), and only then is the payment made. The PIN never travels over plain SMS.
-4. **The SMS command layer:**
-   * A strict, table-driven regex parser turns text into actions (`balance`, `history`, `send <amount> to <phone>`, `address`).
-   * Watch-only balance queries answer live from the ledger without needing a PIN.
-5. **The Cryptographic Receipt Chain:**
-   * Canonical hash: `SHA256(merchant_id | seq | invoice_id | amount_ngn | sats_per_ngn | value_mode | value_locked_ngn | prev_receipt_hash)`.
-   * Continuous verification: recomputes all hashes from Genesis (`0000...`) and verifies gapless sequences.
-6. **Multi-Rail BTC Swaps:**
-   * Atomic HTLC swaps between Lightning BTC and on-chain Bitcoin.
-   * State machine: `CREATED → PENDING → SUCCESS` or `REFUNDED` upon block timeout.
-7. **Rate Oracle:**
-   * Live CoinGecko BTC/NGN feed with 60-second caching.
-   * Manual override `RATE_OVERRIDE_NGN` to guarantee 100% demo resilience if wifi lags.
+SautiPay aims to make Bitcoin easier to access through familiar phone menus while treating authentication, key management, and payment verification as first-class requirements.
 
 ---
 
-## SMS Commands
+## The Solution
 
-| Text | What happens |
-| :--- | :--- |
-| `balance` · `kudi` · `bal` | Answered by SMS live from a watch-only read of the ledger (no PIN needed). |
-| `history` · `tarihi` | Last verified receipt reference and amount sent by SMS. |
-| `send 2000 to 08012345678` | Call-back initiated: backend rings your phone, reads the details, you confirm with your PIN. |
-| `aika 2000 zuwa 08012345678` | Same, in Hausa. |
-| `address` · `karba` | Returns your Lightning address (`<phone>@sautipay.ng`). |
-| `help` · `madad` · `menu` | Command list by SMS. |
+* **USSD-first access:** Familiar short-code menus without requiring mobile data on the user's handset for the core USSD session.
+* **Lightning-focused payments:** Simple journeys for supported send/receive operations.
+* **English and Hausa:** Language accessibility from the beginning.
+* **Voice access:** Planned interactive phone-call menus for people who prefer spoken prompts or find text menus difficult.
+* **Security-minded design:** Explicit transaction authorization, spending limits, idempotency, and clear payment states.
+* **Shared backend:** USSD and voice should use the same application services, account model, wallet mapping, and transaction controls.
 
-*A PIN in an SMS message is never accepted.*
+*SautiPay will not claim that fiat on/off-ramps, swaps, or other integrations are available until their providers, liquidity, settlement, compliance, and implementation have been verified.*
 
 ---
 
-## USSD Menu Tree (`*384#`)
+## Target Users
+
+* Feature-phone users and people with limited mobile data.
+* First-time Bitcoin users who need a simpler interface.
+* People who prefer English or Hausa prompts.
+* Small merchants and community businesses exploring Lightning payments.
+* Bitcoin communities interested in accessible phone-based services.
+
+---
+
+## Product Channels
+
+### 1. USSD — Primary Channel
+Users dial a provisioned short code and navigate a menu. The USSD provider sends session requests to SautiPay through server callbacks.
+
+Potential menu options include balance, receive, send, recent transactions, language, and help. Only expose options whose backend flows are implemented and tested.
+
+### 2. Voice Calls — Advanced Feature
+The planned voice channel lets users call a service number and hear interactive voice response (IVR) prompts. The first version should use keypad tones (DTMF); speech recognition can be evaluated later.
+
+The voice experience should:
+* Offer English and Hausa prompts where supported by the chosen provider.
+* Read menu options and transaction details aloud.
+* Reuse the same backend services and controls as USSD.
+* Require authentication and explicit confirmation before sensitive actions.
+* Explain whether a transaction is pending, successful, failed, or still being reconciled.
+* Handle call drops, timeouts, duplicate callbacks, and invalid input safely.
+
+> **Voice status:** Planned until inbound calls, menu navigation, authentication, and the relevant flows have been implemented and tested end to end. Verify Nigerian number provisioning, provider coverage, pricing, and Hausa voice quality before promising a live demo.
+
+### 3. SMS — Notifications
+SMS may be used for receipts and non-sensitive alerts. Do not accept PINs or treat SMS or caller ID alone as authorization for a Bitcoin transfer.
+
+---
+
+## Example User Journeys
+
+### Onboarding
+1. User starts through USSD or, when available, the voice number.
+2. SautiPay explains the service and custody model.
+3. User completes authentication and consent steps.
+4. Backend creates an internal user ID and links it to a normalized phone number.
+5. User receives confirmation and help instructions.
+
+*A phone number is a contact/account identifier, not a database primary key. Account recovery must consider SIM swaps and recycled phone numbers.*
+
+### Send a Lightning Payment
+1. User enters the destination and amount.
+2. Backend validates the destination, fees, amount, limits, and payment request.
+3. SautiPay reads or displays the recipient, amount, and fee.
+4. User authenticates and explicitly confirms.
+5. Payment service submits the request through the Lightning adapter.
+6. Backend reconciles the result and reports it accurately.
+
+*A timeout is not proof of failure or success. An uncertain payment must remain `PENDING` or `UNKNOWN` until reconciled; do not blindly retry.*
+
+### Receive a Lightning Payment
+1. User chooses Receive.
+2. Backend creates a supported payment request/address.
+3. SautiPay explains amount and expiry when applicable.
+4. Backend verifies payment status through the supported integration.
+5. A receipt is issued only after the payment state is verified.
+
+---
+
+## Planned Voice-Call Flow
 
 ```text
-Dial *384#
-├── Unregistered Phone
-│   └── Choose Language: 1. English  2. Hausa
-│       └── Enter 4-digit PIN → Account Created!
-│
-└── Registered Phone
-    ├── 1. Balance & History (Enter PIN → Returns Sats, NGN, and Receipt count)
-    ├── 2. Request Payment (Enter NGN → Enter PIN → Creates Lightning Invoice)
-    ├── 3. Send to Phone (Enter recipient phone → Enter NGN → Enter PIN → Instant P2P transfer)
-    ├── 4. Swap to On-Chain BTC (Enter sats → Enter on-chain address → Atomic swap)
-    ├── 5. Settlement Mode (1. keep_sats  2. lock_ngn)
-    └── 6. Switch Language (English ↔ Hausa toggle)
+Incoming call
+    │
+    ▼
+Verify provider webhook
+    │
+    ▼
+Select language (English / Hausa)
+    │
+    ▼
+Identify account and authenticate (PIN via DTMF)
+    │
+    ▼
+Read available menu
+    │
+    ▼
+Choose a supported action
+    │
+    ▼
+Validate amount, destination, fees, and limits
+    │
+    ▼
+Read back transaction details
+    │
+    ▼
+Explicit authenticated confirmation
+    │
+    ▼
+Submit transaction and reconcile status
+    │
+    ▼
+Read result aloud and dispatch receipt if appropriate
 ```
+
+### Voice Implementation Approach
+* Use a telephony provider supporting inbound calls, HTTPS webhooks, DTMF, and programmable call control.
+* Put provider-specific behaviour behind a `VoiceProvider` adapter.
+* Implement an explicit IVR state machine with validated transitions.
+* Verify webhook signatures and use idempotency controls for repeated callbacks.
+* Keep prompts short and provide help, cancel, and exit paths.
+* Do not reveal sensitive account information before authentication.
+* Never collect PINs in SMS, logs, analytics, or untrusted callback parameters.
+* Do not let caller ID alone authorize a transfer.
+* Reuse the shared payment, account, limits, and audit services rather than building a separate wallet for voice.
 
 ---
 
-## Run
+## Architecture
 
-Requires Python 3.11+.
+```text
+Feature phone
+  │               │
+  │ USSD          │ Voice call (planned)
+  ▼               ▼
+USSD provider   Telephony / IVR provider
+  │ HTTPS         │ HTTPS
+  │ callback      │ webhook
+  └───────┬───────┘
+          ▼
+    Channel adapters
+          │
+          ▼
+   Authentication / sessions
+          │
+          ▼
+   SautiPay application services
+   ├── Account
+   ├── Payments
+   └── Notifications
+          │
+          ▼
+   Bitcoin / Lightning adapter
+          │
+          ▼
+   Lightning infrastructure
+```
+
+**Shared services:** PostgreSQL/SQLite, secret management, audit events, monitoring, webhook validation, idempotency, and reconciliation.
+
+---
+
+## Technology Stack
+
+| Area | Initial Direction |
+| :--- | :--- |
+| **Backend** | Python, FastAPI |
+| **Validation** | Pydantic |
+| **Database** | SQLite (prototype) / PostgreSQL (production target) |
+| **Lightning** | LND through a dedicated adapter, subject to repository implementation |
+| **USSD** | Africa's Talking or another verified provider |
+| **Voice** | IVR provider with inbound calls and DTMF, selected after coverage/pricing checks |
+| **Testing** | `pytest`, integration tests, provider mocks |
+| **Local infrastructure** | Python virtual environment / Docker Compose |
+
+*This is the intended stack, not proof every component is connected. Update it to match the code and dependencies in the repository.*
+
+---
+
+## Security and Privacy
+
+Before handling real funds:
+
+* Never use phone number or caller ID as the only authentication factor.
+* Store no plaintext PINs; use a reviewed PIN-verification design, rate limits, and lockouts.
+* Keep wallet seeds and signing keys out of ordinary database records, logs, source control, and unprotected environment files.
+* If SautiPay controls keys or signs for users, disclose the custodial model clearly and review key protection, backups, recovery, and incident response.
+* Use a protected secret/key-management service for production secrets.
+* Verify provider webhook signatures and deduplicate callbacks.
+* Require transaction-specific confirmation of recipient, amount, and fee.
+* Enforce per-transaction and rolling spending limits on the server.
+* Design for SIM swaps, recycled numbers, account recovery, and lost access.
+* Use TLS, least-privilege access, monitoring, and tested backups.
+* Do not deploy with real funds until security, recovery, reconciliation, legal, and operational reviews are complete.
+
+*A Lightning node or SDK alone is not a complete multi-user wallet service. The application also needs user-to-wallet mapping, custody/key management where applicable, accounting, reconciliation, backups, liquidity, and operational monitoring.*
+
+---
+
+## Implementation Status
+
+*Keep this table honest and update it based on the actual repository:*
+
+| Capability | Status to use until verified |
+| :--- | :--- |
+| **Product direction and user journeys** | Defined |
+| **USSD provider integration** | Implemented (sandbox tested) |
+| **English and Hausa UX** | Implemented (bilingual menu) |
+| **Voice IVR and phone-call access** | Advanced feature planned |
+| **Lightning send/receive** | Implemented (LND REST + test suite) |
+| **Payment reconciliation and receipts** | Implemented (Hash-chained ledger) |
+| **Transaction limits and replay protection** | Implemented (`security_engine.py`) |
+| **Production key management and recovery** | Requires review before real funds |
+| **On-chain BTC, swaps, NGN rails** | Implemented atomic swap engine / NGN future scope |
+
+*Only mark a feature "implemented" when the code exists and tests demonstrate it. Include environment details for demos (sandbox, testnet, regtest, or mainnet).*
+
+---
+
+## Local Development
+
+The exact commands depend on the repository. For this project:
 
 ```bash
+git clone https://github.com/Ugarba202/SautiPay-.git
+cd SautiPay-
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
+uvicorn app.main:app --reload
 ```
 
-### 1. Seed Demo Merchant
-```bash
-python3 scripts/seed_demo.py
-```
-*Seeds merchant: `Phone: +2348012345678`, `PIN: 1234`, `Mode: lock_ngn`, `Daily Limit: ₦50,000`.*
-
-### 2. Run the Full 9-Beat Automated Stage Demo
-```bash
-python3 demo.py
-```
-Runs the headless end-to-end stage script without human input:
-1. **Problem beat:** Fake-alert scam context in Nigerian markets.
-2. **USSD Request:** Merchant requests ₦2,000 via `*384#`.
-3. **Settlement:** LND node confirms preimage $\rightarrow$ receipt minted $\rightarrow$ SMS dispatches.
-4. **Ledger Audit:** Cryptographic verification from Genesis confirmed.
-5. **Tamper Demo:** Modifying a database record immediately breaks the chain and triggers `TAMPER DETECTED`.
-6. **Security Attack 1:** Replaying a consumed nonce is blocked fail-closed.
-7. **Security Attack 2:** Over-limit spend (₦15,000) is blocked before wallet execution.
-8. **Value Mode:** Switch between `lock_ngn` and `keep_sats`.
-9. **Multi-Rail Swap:** Atomic HTLC swap moving 20,000 sats from Lightning to on-chain cold storage.
-
-### 3. Run Test Suite
-```bash
-pytest tests
-```
-*37 unit and integration tests passing 100% green.*
+*Never commit `.env` or real credentials.*
 
 ---
 
-## On a Real Phone (Live Telephony)
+## Configuration
 
-Point your Africa's Talking or Twilio webhooks at your public URL (e.g. via ngrok):
+Document only environment variables used by the code. Likely categories include:
 
-```bash
-ngrok http 8000
+```ini
+APP_ENV=development
+DATABASE_URL=sautipay.db
+
+# Add only when the corresponding integration exists:
+# USSD_PROVIDER_API_KEY=
+# USSD_SERVICE_CODE=*384#
+# PUBLIC_BASE_URL=
+# VOICE_PROVIDER_ACCOUNT_ID=
+# VOICE_PROVIDER_AUTH_TOKEN=
+# VOICE_PROVIDER_NUMBER=
 ```
 
-1. **USSD Webhook:** Point USSD callback to `https://<public-url>/ussd` (POST).
-2. **SMS Webhook:** Point incoming SMS callback to `https://<public-url>/sms` (POST).
-3. **LND Settlement Hook:** Point LND webhook to `https://<public-url>/webhook/lnd` (POST).
-
-Start the server:
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-Open in browser:
-* **Control Room:** `http://localhost:8000/` (Live node status, block visualization, invoices)
-* **Receipt Chain Audit:** `http://localhost:8000/receipts/` (Cryptographic verification table)
-* **Merchant Desk Phone View:** `http://localhost:8000/m` (Full-screen green `SETTLED` banner for fallback phone on desk)
+*The variable names are illustrative placeholders; align them with the implementation and provider documentation.*
 
 ---
 
-## Production Checklist
+## Testing Checklist
 
-* `PUBLIC_URL` is the HTTPS URL Africa's Talking / Twilio reaches.
-* `LND_REST_URL` points to synced Voltage Cloud or Polar testnet node.
-* `LND_MACAROON_HEX` uses least-privilege `invoice.macaroon`.
-* `AT_USERNAME=sandbox` and `AT_API_KEY` configured in `.env`.
-* `RATE_OVERRIDE_NGN` set (e.g. `1.847`) to guarantee 100% demo resilience regardless of external API outages.
-* Database runs in SQLite WAL mode with foreign keys enforced.
+* [x] New and returning user flows.
+* [x] English/Hausa menu selection and fallback.
+* [x] Invalid input, expired sessions, and repeated callbacks.
+* [x] Incorrect PIN, rate limiting, lockout, and recovery.
+* [x] Invalid invoice, wrong recipient, fees, insufficient balance, and spending limits.
+* [x] Duplicate webhooks and idempotent processing.
+* [x] Pending/unknown payment status and reconciliation after timeout.
+* [ ] Call drop/reconnect, DTMF validation, and safe IVR exits.
+* [x] Provider signature validation and malformed webhook payloads.
+* [x] Logs and error responses do not expose secrets.
+* [x] Use a test network or provider sandbox for integration tests.
 
----
-
-## 30-Second Answers for Judges
-
-* **"Isn't this Machankura?"**
-  > "Machankura proved USSD Bitcoin and we respect their work, but their wallet stops at personal transfers — their menu literally marks merchant payments as 'not yet available'. SautiPay is the trust and settlement layer: our node independently verifies settlement and gives the merchant a hash-chained receipt a scammer cannot fake."
-
-* **"How do you know it settled?"**
-  > "Two independent proofs: `SHA256(preimage)` must match the invoice's payment hash, and our LND node must confirm the invoice is `SETTLED`. Only then is a receipt minted and only then does the SMS fire. There is no other code path in `app/settlement.py`."
-
-* **"What about volatility?"**
-  > "The merchant picks: keep sats, or lock naira — in `lock_ngn` mode, the receipt records the exact value at the stamped rate. Sats are the rail; the unit of account is the merchant's choice."
-
-* **"Is the SMS fakeable?"**
-  > "The SMS is just a notification. The receipt it references verifies cryptographically against the hash chain on our ledger. Anyone can forge a bank alert SMS; no one can fake a receipt that validates against prior hashes."
-
-* **"Who controls the Bitcoin keys?"**
-  > "SautiPay operates a secure backend wallet engine (server-side signing) protected by memory-hard `scrypt` PIN hashing, strict spending limits, and an auditable ledger. For high-value spends, SautiPay calls the user back so the PIN is entered over audio tones (DTMF), never plaintext SMS."
+*A voice demo should prove inbound calling, language/menu navigation, authentication, and safe invalid-input handling. Demonstrate payments only in a test environment unless production controls have been reviewed.*
 
 ---
 
-## Honesty Lines (Non-Negotiables)
+## Deployment Considerations
 
-1. **Testnet / Sandbox Only:** Built and verified for testnet/regtest; no mainnet funds used.
-2. **Naira Lock Commitment:** Value in `lock_ngn` mode is an internal ledger commitment redeemable via future agent desks — real fiat conversion is on the roadmap.
-3. **Wallet Requirement:** The buyer needs a standard Lightning-capable wallet; SautiPay is the merchant receiving leg.
-4. **Telecom Sandbox:** Africa's Talking sandbox is used for demo USSD and SMS.
-5. **Prior Art:** We build upon the work of Machankura, LNpesa, DialSats, and BOLT11/LND.
+* Deploy public endpoints behind HTTPS with a stable hostname.
+* Configure provider callbacks and verify signatures.
+* Keep credentials in protected deployment configuration or a secrets manager.
+* Secure and back up database; test recovery.
+* Monitor callback failures, payment reconciliation delays, database availability, and provider errors.
+* Separate development, test, and production credentials.
+* Confirm USSD code provisioning, voice number availability, local pricing, provider coverage, and applicable Nigerian regulatory obligations.
+
+---
+
+## Roadmap
+
+### Phase 1 — Secure USSD Foundation
+* Build and test USSD session/menu flows.
+* Add English/Hausa copy.
+* Implement supported Lightning flows.
+* Add authorization, limits, idempotency, reconciliation, and receipts.
+
+### Phase 2 — Voice Access
+* Select a provider based on Nigerian coverage and price.
+* Implement IVR state machine and DTMF.
+* Add English/Hausa prompts.
+* Reuse shared authentication and payment services.
+* Test call drops, retries, invalid input, and uncertain payment status.
+
+### Phase 3 — Broader Bitcoin Access
+* Evaluate on-chain BTC support and recovery requirements.
+* Research supported swap routes and their risks.
+* Explore merchant settlement verification.
+* Investigate fiat on/off-ramps only where providers, liquidity, settlement, and compliance are verified.
+
+### Phase 4 — Reliability and Ecosystem
+* Improve monitoring, backups, support, and incident response.
+* Conduct security and usability reviews.
+* Publish integration guides and invite open-source contributions.
+
+---
+
+## Contributing
+
+Contributions are welcome in USSD flows, localization, provider adapters, webhook security, Lightning tests, payment reconciliation, IVR/DTMF handling, documentation, and deployment hardening.
+
+Before submitting a pull request:
+1. Describe the problem and change.
+2. Add or update tests.
+3. Document configuration changes.
+4. Never include secrets, real user data, or wallet key material.
+5. State which flows were tested and in what environment.
+
+---
+
+## License
+
+Add a LICENSE file before publishing and choose a license that matches the project's goals. Do not imply that a license exists until it is present in the repository.
+
+---
+
+**SautiPay — Bitcoin access through familiar phone interfaces.**
